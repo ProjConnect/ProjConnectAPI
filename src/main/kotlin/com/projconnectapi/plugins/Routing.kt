@@ -10,7 +10,19 @@ fun Application.configureRouting() {
 
     routing {
         get("/") {
-            call.respondText("Hello World!")
+            call.response.status(HttpStatusCode.OK)
+        }
+
+        get("/post") {
+            call.response.status(HttpStatusCode.OK)
+        }
+
+        get("/post/{id}") {
+            call.response.status(HttpStatusCode.OK)
+        }
+
+        get("/user/{id}") {
+            call.response.status(HttpStatusCode.OK)
         }
     }
 }
