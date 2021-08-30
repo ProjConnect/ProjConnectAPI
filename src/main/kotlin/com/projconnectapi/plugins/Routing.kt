@@ -9,7 +9,7 @@ import io.ktor.request.*
 fun Application.configureRouting() {
 
     routing {
-        get("/") {
+        get("/status") {
             call.response.status(HttpStatusCode.OK)
         }
 
