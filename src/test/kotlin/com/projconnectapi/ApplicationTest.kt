@@ -1,13 +1,12 @@
 package com.projconnectapi
 
-import io.ktor.routing.*
-import io.ktor.http.*
-import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.request.*
-import kotlin.test.*
-import io.ktor.server.testing.*
-import com.projconnectapi.plugins.*
+import com.projconnectapi.plugins.configureRouting
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.withTestApplication
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ApplicationTest {
     @Test
