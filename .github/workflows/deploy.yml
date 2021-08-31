@@ -21,4 +21,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: pip install fabric
-      - run: fabric -i ${{ secrets.SSH_PRIVATE_KEY }} -H ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_PORT }} deploy
+      - run: fabric -i ${{ secrets.SSH_PRIVATE_KEY }} -H ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST_PROD }}:${{ secrets.REMOTE_PORT }} deploy
