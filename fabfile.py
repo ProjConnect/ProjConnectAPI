@@ -9,10 +9,10 @@ def deploy(con, branch="main"):
         con.run(f"git fetch origin {branch}")
 
         print(f"Switching to branch {branch}...")
-        con.run(f"git switch {branch}")
+        con.run(f"git switch {branch} -f")
 
         print("Hard reset branch...")
-        con.run("git reset --hard @{{u}}")
+        con.run(f"git reset --hard @{{u}}")
 
         print("Executing deploy script...")
         con.run("sh deploy.sh", pty=False)
