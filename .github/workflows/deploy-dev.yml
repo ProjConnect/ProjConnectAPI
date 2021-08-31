@@ -20,5 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: |
+          mkdir: -p /home/runner/.ssh
+          ssh-keyscan ${{ secrets.REMOTE_HOST_DEV }} >> /home/runner/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/runner/.ssh/ssh_key
+          chmod 400 /home/runner/.ssh/ssh_key
       - run: pip install fabric
-      - run: fabric -i ${{ secrets.SSH_PRIVATE_KEY }} -H ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST_DEV }}:${{ secrets.REMOTE_PORT }} deploy --branch ${{ env.GITHUB_REF }}
+      - run: fabric -i /home/runner/.ssh/ssh_key -H ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST_DEV }}:${{ secrets.REMOTE_PORT }} deploy --branch ${{ env.GITHUB_REF }}
