@@ -9,14 +9,16 @@ echo "Compiling app..."
 ./gradlew build
 
 echo "Starting server..."
-nohup ./gradlew run >> $DATE.log &
+nohup ./gradlew run >> $DATE.log 2>&1 &
+
+PORT=8080
 
 echo "Waiting for server availability..."
-status_code=$(curl --write-out %{http_code} --silent --output /dev/null http://localhost:$PORT/api/status)
+status_code=$(curl --write-out %{http_code} --silent --output /dev/null http://localhost:$PORT/status)
 while [ "$status_code" -ne 200 ]; do
   echo "Server not available, trying again in 10 seconds..."
   sleep 10
-  status_code=$(curl --write-out %{http_code} --silent --output /dev/null http://localhost:$PORT/api/status)
+  status_code=$(curl --write-out %{http_code} --silent --output /dev/null http://localhost:$PORT/status)
 done
 
 echo "Server started successfully! Logs are available at logs/"
