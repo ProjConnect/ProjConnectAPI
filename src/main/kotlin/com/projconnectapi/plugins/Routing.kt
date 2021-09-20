@@ -10,6 +10,7 @@ import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import org.bson.types.ObjectId
+import org.litote.kmongo.contains
 import org.litote.kmongo.findOneById
 import org.litote.kmongo.getCollection
 
@@ -20,7 +21,7 @@ fun Application.configureRouting() {
             call.response.status(HttpStatusCode.OK)
         }
 
-        get("/post") {
+        get("/posts") {
             val postStorage = database.getCollection<Post>().find().toList()
             if (postStorage.isNotEmpty()) {
                 call.respond(postStorage)
@@ -29,7 +30,7 @@ fun Application.configureRouting() {
             }
         }
 
-        get("/post/{id}") {
+        get("/search/post/id/{id}") {
             val id = call.parameters["id"] ?: return@get call.respondText(
                 "Missing or malformed id",
                 status = HttpStatusCode.BadRequest
@@ -42,8 +43,21 @@ fun Application.configureRouting() {
             }
         }
 
-        get("/user/{id}") {
-            call.response.status(HttpStatusCode.OK)
+        get("/search/post/tags/{tag}") {
+            val tag = call.parameters["tag"] ?: return@get call.respondText(
+                "Missing or malformed tag",
+                status = HttpStatusCode.BadRequest
+            )
+            val posts: List<Post> = database.getCollection<Post>().find(Post::tags contains tag).toList()
+            if (posts.isNotEmpty()) {
+                call.respond(posts)
+            } else {
+                call.respondText("No post found with tag $tag", status = HttpStatusCode.NotFound)
+            }
+        }
+
+        get("/search/user/{id}") {
+            call.respondText("Functionality not implemented!", status = HttpStatusCode.OK)
         }
     }
 }
