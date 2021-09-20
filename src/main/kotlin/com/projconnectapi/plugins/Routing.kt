@@ -1,6 +1,7 @@
 package com.projconnectapi.plugins
 
-import com.projconnectapi.models.postStorage
+import com.projconnectapi.dbactions.database
+import com.projconnectapi.models.Post
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -8,6 +9,9 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import org.bson.types.ObjectId
+import org.litote.kmongo.findOneById
+import org.litote.kmongo.getCollection
 
 fun Application.configureRouting() {
 
@@ -17,7 +21,8 @@ fun Application.configureRouting() {
         }
 
         get("/post") {
-            if (postStorage.isNotEmpty()){
+            val postStorage = database.getCollection<Post>().find().toList()
+            if (postStorage.isNotEmpty()) {
                 call.respond(postStorage)
             } else {
                 call.respondText("No post found", status = HttpStatusCode.NotFound)
@@ -29,12 +34,12 @@ fun Application.configureRouting() {
                 "Missing or malformed id",
                 status = HttpStatusCode.BadRequest
             )
-            val post =
-                postStorage.find { it.postId == id } ?: return@get call.respondText(
-                    "No post with id $id",
-                    status = HttpStatusCode.NotFound
-                )
-            call.respond(post)
+            val post = database.getCollection<Post>().findOneById(ObjectId(id))
+            if (post != null) {
+                call.respond(post)
+            } else {
+                call.respondText("No post found", status = HttpStatusCode.NotFound)
+            }
         }
 
         get("/user/{id}") {
