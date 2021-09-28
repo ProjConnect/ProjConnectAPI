@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  ktor:
+  ktor_dev:
     image: ktor-api:dev
     env_file:
       - .env
