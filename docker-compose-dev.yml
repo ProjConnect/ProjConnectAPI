@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  ktor_dev:
+    image: ktor-api:dev
+    networks:
+      - dev
+    env_file:
+      - .env
+    ports:
+      - 8090:8080
+
+networks:
+  dev:
