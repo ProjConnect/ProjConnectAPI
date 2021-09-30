@@ -3,6 +3,7 @@ package com.projconnectapi
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.projconnectapi.plugins.configureOAuth
 import com.projconnectapi.plugins.configureRouting
+import com.projconnectapi.plugins.configureSessions
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.jackson.jackson
@@ -20,5 +21,6 @@ fun main() {
         }
         configureOAuth()
         configureRouting()
+        configureSessions()
     }.start(wait = true)
 }
