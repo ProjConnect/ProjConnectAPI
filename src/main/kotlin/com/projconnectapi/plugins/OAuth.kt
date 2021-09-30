@@ -20,7 +20,10 @@ fun Application.configureOAuth() {
                     requestMethod = HttpMethod.Post,
                     clientId = System.getenv("GOOGLE_CLIENT_ID"),
                     clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
-                    defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile")
+                    defaultScopes = listOf(
+                        "https://www.googleapis.com/auth/userinfo.profile",
+                        "https://www.googleapis.com/auth/userinfo.email"
+                    )
                 )
             }
             client = oauthClient
