@@ -25,6 +25,7 @@ repositories {
 }
 
 dependencies {
+    // server
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
@@ -34,4 +35,12 @@ dependencies {
     implementation("io.ktor:ktor-jackson:$ktor_version")
     implementation("org.litote.kmongo:kmongo:4.3.0")
     implementation("org.litote.kmongo:kmongo-id-jackson:4.3.0")
+
+    // auth
+    implementation("io.ktor:ktor-auth:$ktor_version")
+
+    // client
+    implementation("io.ktor:ktor-client-core:$ktor_version")
+    implementation("io.ktor:ktor-client-cio:$ktor_version")
+    implementation("io.ktor:ktor-client-serialization:$ktor_version")
 }
