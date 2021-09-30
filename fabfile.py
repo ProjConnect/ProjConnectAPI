@@ -2,8 +2,8 @@ from fabric import task
 
 
 @task
-def deploy(con, branch="main"):
-    code_dir = "~/ProjConnectAPI"
+def deploy(con, branch="main", stage="prod"):
+    code_dir = f"~/{stage}/ProjConnectAPI"
     with con.cd(code_dir):
         print(f"Fetching branch {branch}...")
         con.run(f"git fetch origin {branch}")
@@ -14,5 +14,11 @@ def deploy(con, branch="main"):
         print("Hard reset branch...")
         con.run(f"git reset --hard @{{u}}")
 
-        print("Executing deploy script...")
-        con.run("sh deploy.sh", pty=False)
+        print("Compiling App")
+        con.run("./gradlew installDist")
+
+        print("Building Image")
+        con.run(f"docker build -t ktor-api:{stage} .")
+
+        print("Running Docker Compose")
+        con.run(f"docker-compose -f docker-compose-{stage}.yml up -d")

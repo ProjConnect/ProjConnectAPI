@@ -1,5 +1,8 @@
 package com.projconnectapi.plugins
 
+import com.projconnectapi.routes.oauthRoute
+import com.projconnectapi.routes.postsRoute
+import com.projconnectapi.routes.userRoute
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -12,17 +15,8 @@ fun Application.configureRouting() {
         get("/status") {
             call.response.status(HttpStatusCode.OK)
         }
-
-        get("/post") {
-            call.response.status(HttpStatusCode.OK)
-        }
-
-        get("/post/{id}") {
-            call.response.status(HttpStatusCode.OK)
-        }
-
-        get("/user/{id}") {
-            call.response.status(HttpStatusCode.OK)
-        }
+        oauthRoute()
+        postsRoute()
+        userRoute()
     }
 }
