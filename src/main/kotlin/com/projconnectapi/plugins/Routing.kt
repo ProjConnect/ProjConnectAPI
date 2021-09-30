@@ -2,6 +2,7 @@ package com.projconnectapi.plugins
 
 import com.projconnectapi.dbactions.database
 import com.projconnectapi.models.Post
+import com.projconnectapi.routes.oauthRoute
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -20,6 +21,7 @@ fun Application.configureRouting() {
         get("/status") {
             call.response.status(HttpStatusCode.OK)
         }
+        oauthRoute()
 
         get("/posts") {
             val postStorage = database.getCollection<Post>().find().toList()
