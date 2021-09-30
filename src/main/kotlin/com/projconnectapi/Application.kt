@@ -1,6 +1,7 @@
 package com.projconnectapi
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.projconnectapi.plugins.configureOAuth
 import com.projconnectapi.plugins.configureRouting
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
@@ -17,6 +18,7 @@ fun main() {
                 registerModule(IdJacksonModule())
             }
         }
+        configureOAuth()
         configureRouting()
     }.start(wait = true)
 }
