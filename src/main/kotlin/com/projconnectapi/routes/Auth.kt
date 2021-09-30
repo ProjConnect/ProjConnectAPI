@@ -5,10 +5,10 @@ import io.ktor.application.call
 import io.ktor.auth.OAuthAccessTokenResponse
 import io.ktor.auth.authenticate
 import io.ktor.auth.principal
+import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.sessions.sessions
-import io.ktor.sessions.set
 
 fun Route.oauthRoute() {
     authenticate("auth-oauth-google") {
@@ -18,8 +18,8 @@ fun Route.oauthRoute() {
 
         get("/callback") {
             val principal: OAuthAccessTokenResponse.OAuth2? = call.principal()
-            principal?.accessToken.toString()
-            call.sessions.set(UserSession(principal?.accessToken.toString()))
+            call.sessions.set("user_session", UserSession(principal?.accessToken.toString()))
+            call.respondRedirect("/status")
         }
     }
 }
