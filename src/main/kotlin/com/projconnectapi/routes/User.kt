@@ -1,13 +1,10 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
-import com.projconnectapi.clients.oauthClient
+import com.projconnectapi.clients.tokenVerifier
 import com.projconnectapi.models.User
 import com.projconnectapi.schemas.UserSession
 import io.ktor.application.call
-import io.ktor.client.request.get
-import io.ktor.client.request.headers
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -22,30 +19,55 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.getCollection
 
+fun isUserSafe(user: User, googleAcc: String, newUser: Boolean): Boolean {
+    return if (newUser) {
+        user.username != "" &&
+            database.getCollection<User>()
+            .findOne(User::username eq user.username) == null &&
+            user.email == googleAcc &&
+            !user.isModerator
+    } else {
+        val userInDB: User? = database.getCollection<User>()
+            .findOne(User::username eq user.username)
+        userInDB != null &&
+            user.username == userInDB.username &&
+            user.email == userInDB.email &&
+            (!user.isModerator || user.isModerator && userInDB.isModerator)
+    }
+}
+
+fun ifSafeThenInsert(user: User, googleAcc: String): Boolean {
+    return if (isUserSafe(user, googleAcc, true)) {
+        user.score = 0.0f
+        user.history = listOf()
+        database.getCollection<User>().insertOne(user)
+        true
+    } else {
+        false
+    }
+}
+
 fun Route.userRoute() {
     get("/search/user/{id}") {
         call.respondText("Functionality not implemented!", status = HttpStatusCode.OK)
     }
 
-    get("/user_profile") {
+    get("/project/list") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
-            val userInfo: UserInfo = oauthClient.get("https://www.googleapis.com/oauth2/v2/userinfo") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer ${userSession.token}")
-                }
-            }
-            val userProfile: User? = database.getCollection<User>().findOne(User::email eq userInfo.email)
+            val email = tokenVerifier.verify(userSession.idToken).payload["email"]
+            val userProfile: User? = database.getCollection<User>().findOne(User::email eq email)
             if (userProfile != null) {
                 call.respond(userProfile)
             } else {
                 call.respond(
                     User(
                         "",
-                        userInfo.email,
+                        email as String,
                         false,
-                        userInfo.name,
-                        userInfo.email,
+                        "",
+                        "",
+                        email,
                         "",
                         0.0f,
                         listOf<String>(),
@@ -56,7 +78,6 @@ fun Route.userRoute() {
                     )
                 )
             }
-            call.respondText("Hello, ${userInfo.name}! Your email is ${userInfo.email}")
         } else {
             call.respondRedirect("/login")
         }
@@ -66,48 +87,15 @@ fun Route.userRoute() {
         var user = call.receive<User>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
-            val userInfo: UserInfo = oauthClient.get("https://www.googleapis.com/oauth2/v2/userinfo") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer ${userSession.token}")
-                }
-            }
-            if (user.username == "" ||
-                database.getCollection<User>()
-                    .findOne(User::username eq user.username) != null
-            ) {
-                call.respondText(
-                    "username is empty or already exists",
-                    status = HttpStatusCode.BadRequest
-                )
-            } else if (user.email != userInfo.email) {
-                call.respondText(
-                    "email account doesn't match",
-                    status = HttpStatusCode.BadRequest
-                )
-            } else if (user.isModerator) {
-                call.respondText(
-                    "action not permitted - raise privilege to moderator",
-                    status = HttpStatusCode.BadRequest
-                )
+            val email = tokenVerifier.verify(userSession.idToken).payload["email"]
+            val inserted = ifSafeThenInsert(user, email as String)
+            if (inserted) {
+                call.response.status(HttpStatusCode.Created)
             } else {
-                user.score = 0.0f
-                user.history = listOf()
-                database.getCollection<User>().insertOne(user)
+                call.response.status(HttpStatusCode.BadRequest)
             }
         } else {
             call.respondRedirect("/login")
         }
     }
 }
-
-data class UserInfo(
-    val id: String,
-    val email: String,
-    val verified_email: Boolean,
-    val name: String,
-    val given_name: String,
-    val family_name: String,
-    val picture: String,
-    val locale: String,
-    val hd: String,
-)
