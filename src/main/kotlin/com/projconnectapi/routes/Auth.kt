@@ -18,8 +18,11 @@ fun Route.oauthRoute() {
 
         get("/callback") {
             val principal: OAuthAccessTokenResponse.OAuth2? = call.principal()
-            call.sessions.set("user_session", UserSession(principal?.accessToken.toString()))
-            call.respondRedirect("/status")
+            call.sessions.set("user_session", UserSession(principal?.accessToken.toString(), principal?.extraParameters?.get("id_token").toString()))
+            call.respondRedirect("${System.getenv("CLIENT_URL") ?: ""}/project/list")
         }
+    }
+    get("/logout") {
+        call.sessions.clear("user_session")
     }
 }
