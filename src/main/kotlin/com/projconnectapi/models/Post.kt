@@ -12,6 +12,6 @@ data class Post(
     val supporters: List<String>,
     val finalProductScore: Review,
     val isArchived: Boolean,
-    val tags: MutableList<String>,
+    val tags: List<String>,
     val course: String,
 )
