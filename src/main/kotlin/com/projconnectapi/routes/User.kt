@@ -52,7 +52,7 @@ fun Route.userRoute() {
         call.respondText("Functionality not implemented!", status = HttpStatusCode.OK)
     }
 
-    get("/project/list") {
+    get("/my_profile") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
             val email = tokenVerifier.verify(userSession.idToken).payload["email"]
