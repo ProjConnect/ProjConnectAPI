@@ -1,9 +1,11 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
+import com.projconnectapi.clients.tokenVerifier
 import com.projconnectapi.models.Post
 import com.projconnectapi.schemas.UserSession
 import io.ktor.application.call
+import io.ktor.application.log
 import io.ktor.http.HttpStatusCode
 import io.ktor.response.respond
 import io.ktor.response.respondText
@@ -26,6 +28,17 @@ fun Route.postsRoute() {
             } else {
                 call.respondText("No post found", status = HttpStatusCode.NotFound)
             }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    get("/posts/mine") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        if (userSession != null) {
+            val token = tokenVerifier.verify(userSession.idToken).payload["email"]
+            call.application.log.info(token.toString())
+            call.respond("To be implemented")
         } else {
             call.respond(HttpStatusCode.Unauthorized)
         }
