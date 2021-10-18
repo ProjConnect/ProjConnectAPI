@@ -1,17 +1,23 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
+import com.projconnectapi.models.NewPost
 import com.projconnectapi.models.Post
+import com.projconnectapi.models.Review
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.Route
 import io.ktor.routing.get
+import io.ktor.routing.post
 import org.bson.types.ObjectId
 import org.litote.kmongo.contains
 import org.litote.kmongo.findOneById
 import org.litote.kmongo.getCollection
+import io.ktor.request.*
+import io.ktor.utils.io.*
+import org.litote.kmongo.id.toId
 
 fun Route.postsRoute() {
     get("/posts") {
@@ -47,5 +53,22 @@ fun Route.postsRoute() {
         } else {
             call.respondText("No post found with tag $tag", status = HttpStatusCode.NotFound)
         }
+    }
+
+    post("/new-post") {
+        val formParameters = call.receive<NewPost>()
+        val postStorage = database.getCollection<Post>().insertOne(Post(
+            _id = ObjectId().toId(),
+            subject = formParameters.subject,
+            ownerId = formParameters.ownerId,
+            devId = formParameters.devId,
+            body = formParameters.body,
+            supporters=formParameters.supporters,
+            finalProductScore = Review(0F,"",""),
+            isArchived = formParameters.isArchived,
+            tags = formParameters.tags,
+            course = formParameters.course
+        ))
+        call.respond(postStorage)
     }
 }
