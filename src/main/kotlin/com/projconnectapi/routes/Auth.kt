@@ -1,6 +1,6 @@
 package com.projconnectapi.routes
 
-import com.projconnectapi.clients.tokenVerifier
+import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.clients.utils.getUser
 import com.projconnectapi.models.User
 import com.projconnectapi.schemas.UserSession
@@ -30,14 +30,17 @@ fun Route.oauthRoute() {
             // if it exists, then redirect to project page
             // else redirects to edit page.
             val userSession: UserSession? = call.sessions.get<UserSession>()
-            if (userSession != null) {
-                val email = tokenVerifier.verify(userSession.idToken).payload["email"].toString()
+            val auth = safeTokenVerification(userSession)
+            if (auth != null) {
+                val email = auth["email"].toString()
                 val userProfile: User? = getUser(User::email eq email)
                 if (userProfile != null) {
                     call.respondRedirect("${System.getenv("CLIENT_URL") ?: ""}/project/list")
                 } else {
                     call.respondRedirect("${System.getenv("CLIENT_URL") ?: ""}/profile/edit")
                 }
+            } else {
+                call.respond(HttpStatusCode.Unauthorized)
             }
         }
     }

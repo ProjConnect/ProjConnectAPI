@@ -1,6 +1,6 @@
 package com.projconnectapi.routes
 
-import com.projconnectapi.clients.tokenVerifier
+import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.clients.utils.createUser
 import com.projconnectapi.clients.utils.getUser
 import com.projconnectapi.clients.utils.updateUser
@@ -46,7 +46,7 @@ fun Route.userRoute() {
 
     get("/my_profile") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
-        val auth = tokenVerifier.verify(userSession?.idToken)?.payload
+        val auth = safeTokenVerification(userSession)
         if (auth != null) {
             val email = auth["email"].toString()
             val userProfile = getUser(User::email eq email)
@@ -76,7 +76,7 @@ fun Route.userRoute() {
     post("/profile/update") {
         val user = call.receive<PublicUser>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
-        val auth = tokenVerifier.verify(userSession?.idToken)?.payload
+        val auth = safeTokenVerification(userSession)
         if (auth != null) {
             val email = auth["email"].toString()
             val inserted = ifSafeThenInsert(user, email)

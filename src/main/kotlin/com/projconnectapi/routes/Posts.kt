@@ -1,7 +1,7 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
-import com.projconnectapi.clients.tokenVerifier
+import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.models.Post
 import com.projconnectapi.schemas.UserSession
 import io.ktor.application.call
@@ -35,7 +35,7 @@ fun Route.postsRoute() {
 
     get("/posts/mine") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
-        val auth = tokenVerifier.verify(userSession?.idToken)?.payload
+        val auth = safeTokenVerification(userSession)
         if (auth != null) {
             call.application.log.info(auth.toString())
             call.respond("To be implemented")
