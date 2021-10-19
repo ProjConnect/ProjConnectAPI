@@ -1,5 +1,6 @@
 package com.projconnectapi.schemas
 
 data class UserSession(
-    val token: String
+    val accessToken: String,
+    val idToken: String,
 )
