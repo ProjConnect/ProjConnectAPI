@@ -22,7 +22,6 @@ import org.litote.kmongo.contains
 import org.litote.kmongo.findOneById
 import org.litote.kmongo.getCollection
 import io.ktor.request.*
-import io.ktor.utils.io.*
 import org.litote.kmongo.id.toId
 
 fun Route.postsRoute() {
@@ -79,7 +78,7 @@ fun Route.postsRoute() {
 
     post("/new-post") {
         val formParameters = call.receive<NewPost>()
-        val postStorage = database.getCollection<Post>().insertOne(Post(
+        val successful = database.getCollection<Post>().insertOne(Post(
             _id = ObjectId().toId(),
             subject = formParameters.subject,
             ownerId = formParameters.ownerId,
@@ -90,7 +89,11 @@ fun Route.postsRoute() {
             isArchived = formParameters.isArchived,
             tags = formParameters.tags,
             course = formParameters.course
-        ))
-        call.respond(postStorage)
+        )).wasAcknowledged()
+        if (successful) {
+            call.response.status(HttpStatusCode.Created)
+        } else {
+            call.response.status(HttpStatusCode.BadRequest)
+        }
     }
 }
