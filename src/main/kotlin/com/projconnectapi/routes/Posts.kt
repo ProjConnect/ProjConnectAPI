@@ -35,9 +35,9 @@ fun Route.postsRoute() {
 
     get("/posts/mine") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
-        if (userSession != null) {
-            val token = tokenVerifier.verify(userSession.idToken).payload["email"]
-            call.application.log.info(token.toString())
+        val auth = tokenVerifier.verify(userSession?.idToken)?.payload
+        if (auth != null) {
+            call.application.log.info(auth.toString())
             call.respond("To be implemented")
         } else {
             call.respond(HttpStatusCode.Unauthorized)
