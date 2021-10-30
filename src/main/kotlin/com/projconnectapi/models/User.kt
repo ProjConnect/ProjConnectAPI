@@ -8,7 +8,7 @@ data class User(
     @BsonId val _id: Id<User> = newId(),
     val username: String,
     val email: String,
-    val isModerator: Boolean,
+    var isModerator: Boolean,
     val firstName: String?,
     val lastName: String?,
     val aboutMe: String?,

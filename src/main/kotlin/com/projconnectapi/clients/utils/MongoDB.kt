@@ -9,6 +9,8 @@ import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
 import org.bson.conversions.Bson
+import org.litote.kmongo.Id
+import org.litote.kmongo.deleteOneById
 import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.findOneById
@@ -28,7 +30,7 @@ fun getUser(filter: Bson): User? {
     return userCollection.findOne(filter)
 }
 
-fun getUserById(id: Any): User? {
+fun getUserById(id: Id<User>): User? {
     return userCollection.findOneById(id)
 }
 
@@ -41,6 +43,10 @@ fun updatePost(post: Post) {
     val updateObject = BasicDBObject()
     updateObject["\$set"] = post
     postCollection.updateOne(Post::_id eq post._id, updateObject)
+}
+
+fun deletePostById(id: Id<Post>): Boolean {
+    return postCollection.deleteOneById(id).wasAcknowledged()
 }
 
 fun getPost(filter: Bson): Post? {
