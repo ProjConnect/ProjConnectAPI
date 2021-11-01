@@ -20,7 +20,6 @@ import com.projconnectapi.schemas.UserSession
 import com.projconnectapi.schemas.extensions.toPost
 import com.projconnectapi.schemas.extensions.toPostRequest
 import io.ktor.application.call
-import io.ktor.application.log
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -62,8 +61,26 @@ fun Route.postsRoute() {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
-            call.application.log.info(auth.toString())
-            call.respond("To be implemented")
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                var posts = mutableListOf<Post>()
+                if (user.history != null) {
+                    for (id in user.history) {
+                        var item = getPostById(id)
+                        if (item != null) {
+                            posts.add(item)
+                        }
+                    }
+                    if (posts.isNotEmpty()) {
+                        call.respond(posts)
+                    } else {
+                        call.respond(HttpStatusCode.NoContent)
+                    }
+                } else {
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
         }
@@ -79,6 +96,20 @@ fun Route.postsRoute() {
             call.respond(post)
         } else {
             call.respondText("No post found", status = HttpStatusCode.NotFound)
+        }
+    }
+
+    get("/search/post/reported") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        if (userSession != null) {
+            val postStorage = database.getCollection<Post>().find(Post::reported eq true).toList()
+            if (postStorage.isNotEmpty()) {
+                call.respond(postStorage)
+            } else {
+                call.respondText("No reported post found", status = HttpStatusCode.NoContent)
+            }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
         }
     }
 
@@ -181,6 +212,29 @@ fun Route.postsRoute() {
                 val deleted = deletePostById(post._id)
                 if (deleted) {
                     call.response.status(HttpStatusCode.OK)
+                } else {
+                    call.response.status(HttpStatusCode.NoContent)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("/report/post") {
+        val post: Post = call.receive<Post>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val targetPost: Post? = getPostById(post._id)
+                if (targetPost != null) {
+                    targetPost.reported = true
+                    updatePost(targetPost)
                 } else {
                     call.response.status(HttpStatusCode.NoContent)
                 }

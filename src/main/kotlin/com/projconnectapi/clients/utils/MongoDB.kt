@@ -53,7 +53,7 @@ fun getPost(filter: Bson): Post? {
     return postCollection.findOne(filter)
 }
 
-fun getPostById(id: Any): Post? {
+fun getPostById(id: Id<Post>): Post? {
     return postCollection.findOneById(id)
 }
 
