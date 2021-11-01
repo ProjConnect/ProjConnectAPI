@@ -77,23 +77,30 @@ fun Route.postsRoute() {
     }
 
     post("/new-post") {
-        val formParameters = call.receive<NewPost>()
-        val successful = database.getCollection<Post>().insertOne(Post(
-            _id = ObjectId().toId(),
-            subject = formParameters.subject,
-            ownerId = formParameters.ownerId,
-            devId = formParameters.devId,
-            body = formParameters.body,
-            supporters=formParameters.supporters,
-            finalProductScore = Review(0F,"",""),
-            isArchived = formParameters.isArchived,
-            tags = formParameters.tags,
-            course = formParameters.course
-        )).wasAcknowledged()
-        if (successful) {
-            call.response.status(HttpStatusCode.Created)
-        } else {
-            call.response.status(HttpStatusCode.BadRequest)
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        if (userSession != null) {
+            val formParameters = call.receive<NewPost>()
+            val successful = database.getCollection<Post>().insertOne(Post(
+                _id = ObjectId().toId(),
+                subject = formParameters.subject,
+                ownerId = formParameters.ownerId,
+                devId = formParameters.devId,
+                body = formParameters.body,
+                supporters=formParameters.supporters,
+                finalProductScore = Review(0F,"",""),
+                isArchived = formParameters.isArchived,
+                tags = formParameters.tags,
+                course = formParameters.course
+            )).wasAcknowledged()
+            if (successful) {
+                call.response.status(HttpStatusCode.Created)
+            }
+            else {
+                call.response.status(HttpStatusCode.BadRequest)
+            }
+        }
+        else {
+            call.respond(HttpStatusCode.Unauthorized)
         }
     }
 }
