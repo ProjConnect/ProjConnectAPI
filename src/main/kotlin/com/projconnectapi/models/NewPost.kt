@@ -1,7 +1,5 @@
 package com.projconnectapi.models
 
-
-
 data class NewPost(
     val subject: String,
     val ownerId: String,

@@ -1,11 +1,15 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
+import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.models.NewPost
 import com.projconnectapi.models.Review
 import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.models.Post
+import com.projconnectapi.models.PostRequest
+import com.projconnectapi.schemas.PublicPostRequest
 import com.projconnectapi.schemas.UserSession
+import com.projconnectapi.schemas.extensions.toPostRequest
 
 import io.ktor.application.call
 import io.ktor.application.log
@@ -101,6 +105,17 @@ fun Route.postsRoute() {
         }
         else {
             call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("request/post/create") {
+        val postRequest: PublicPostRequest = call.receive<PublicPostRequest>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            postRequestCollection.insertOne(postRequest.toPostRequest(null))
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
         }
     }
 }
