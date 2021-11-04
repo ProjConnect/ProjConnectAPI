@@ -7,7 +7,7 @@ data class Post(
     @BsonId val _id: Id<Post>,
     val subject: String,
     val ownerId: String,
-    val devId: List<String>,
+    val devId: MutableList<String>,
     val body: String,
     val supporters: List<String>,
     val finalProductScore: Review,

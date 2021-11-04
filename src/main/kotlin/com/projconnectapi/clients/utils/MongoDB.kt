@@ -2,8 +2,10 @@ package com.projconnectapi.clients.utils
 
 import com.mongodb.BasicDBObject
 import com.projconnectapi.clients.postCollection
+import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.userCollection
 import com.projconnectapi.models.Post
+import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
 import org.bson.conversions.Bson
 import org.litote.kmongo.eq
@@ -46,4 +48,9 @@ fun getPost(filter: Bson): Post? {
 
 fun getPostById(id: Bson): Post? {
     return postCollection.findOneById(id)
+}
+
+// Post request functions
+fun createPostRequest(request: PostRequest) {
+    postRequestCollection.insertOne(request)
 }

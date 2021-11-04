@@ -2,11 +2,10 @@ package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
-import com.projconnectapi.models.NewPost
-import com.projconnectapi.models.Review
 import com.projconnectapi.clients.safeTokenVerification
-import com.projconnectapi.models.Post
-import com.projconnectapi.models.PostRequest
+import com.projconnectapi.clients.utils.*
+import com.projconnectapi.models.*
+import com.projconnectapi.schemas.PostRequestResponse
 import com.projconnectapi.schemas.PublicPostRequest
 import com.projconnectapi.schemas.UserSession
 import com.projconnectapi.schemas.extensions.toPostRequest
@@ -22,10 +21,8 @@ import io.ktor.routing.post
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import org.bson.types.ObjectId
-import org.litote.kmongo.contains
-import org.litote.kmongo.findOneById
-import org.litote.kmongo.getCollection
 import io.ktor.request.*
+import org.litote.kmongo.*
 import org.litote.kmongo.id.toId
 
 fun Route.postsRoute() {
@@ -109,13 +106,56 @@ fun Route.postsRoute() {
     }
 
     post("request/post/create") {
-        val postRequest: PublicPostRequest = call.receive<PublicPostRequest>()
+        val postRequest = call.receive<PublicPostRequest>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
-            postRequestCollection.insertOne(postRequest.toPostRequest(null))
-        } else {
+            createPostRequest(postRequest.toPostRequest(null))
+        }
+        else {
             call.response.status(HttpStatusCode.Unauthorized)
         }
     }
+
+    post("request/post/response") {
+        val response = call.receive<PostRequestResponse>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val request: PostRequest? = postRequestCollection.findOneById(response.requestId)
+                if (request != null){
+                    val post: Post? = getPost(Post::_id.toString() eq request.post)
+                    val dev : User? = getUser(User::_id.toString() eq request.devId)
+                    if (post != null && dev != null) {
+                        if (post.ownerId == user._id.toString()) {
+                            if (response.accepted) {
+                                post.devId.add(dev.username)
+                                updatePost(post)
+                            }
+                            postRequestCollection.deleteOneById(response.requestId)
+                        }
+                        else {
+                            call.response.status(HttpStatusCode.Forbidden)
+                        }
+                    }
+                    else {
+                        call.response.status(HttpStatusCode.NotFound)
+                    }
+                }
+                else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            }
+            else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        }
+        else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
 }
