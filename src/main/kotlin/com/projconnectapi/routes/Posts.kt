@@ -1,11 +1,16 @@
 package com.projconnectapi.routes
 
 import com.projconnectapi.clients.database
-import com.projconnectapi.models.NewPost
-import com.projconnectapi.models.Review
+import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
-import com.projconnectapi.models.Post
+import com.projconnectapi.clients.utils.*
+import com.projconnectapi.models.*
+import com.projconnectapi.schemas.NewPost
+import com.projconnectapi.schemas.PostRequestResponse
+import com.projconnectapi.schemas.PublicPostRequest
 import com.projconnectapi.schemas.UserSession
+import com.projconnectapi.schemas.extensions.toPost
+import com.projconnectapi.schemas.extensions.toPostRequest
 
 import io.ktor.application.call
 import io.ktor.application.log
@@ -18,10 +23,8 @@ import io.ktor.routing.post
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import org.bson.types.ObjectId
-import org.litote.kmongo.contains
-import org.litote.kmongo.findOneById
-import org.litote.kmongo.getCollection
 import io.ktor.request.*
+import org.litote.kmongo.*
 import org.litote.kmongo.id.toId
 
 fun Route.postsRoute() {
@@ -80,18 +83,7 @@ fun Route.postsRoute() {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
             val formParameters = call.receive<NewPost>()
-            val successful = database.getCollection<Post>().insertOne(Post(
-                _id = ObjectId().toId(),
-                subject = formParameters.subject,
-                ownerId = formParameters.ownerId,
-                devId = formParameters.devId,
-                body = formParameters.body,
-                supporters=formParameters.supporters,
-                finalProductScore = Review(0F,"",""),
-                isArchived = formParameters.isArchived,
-                tags = formParameters.tags,
-                course = formParameters.course
-            )).wasAcknowledged()
+            val successful = createPost(formParameters.toPost(null)).wasAcknowledged()
             if (successful) {
                 call.response.status(HttpStatusCode.Created)
             }
@@ -103,4 +95,71 @@ fun Route.postsRoute() {
             call.respond(HttpStatusCode.Unauthorized)
         }
     }
+
+    get("search/request/postid/{id}") {
+        val postId = call.parameters["id"] ?: return@get call.respondText(
+            "Missing or malformed id",
+            status = HttpStatusCode.BadRequest
+        )
+        val requests: List<PostRequest> = postRequestCollection.find(PostRequest::post eq postId).toList()
+        if (requests.isNotEmpty()) {
+            call.respond(requests)
+        } else {
+            call.respondText("No requests found", status = HttpStatusCode.NotFound)
+        }
+    }
+
+    post("request/post/create") {
+        val postRequest = call.receive<PublicPostRequest>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            createPostRequest(postRequest.toPostRequest(null))
+        }
+        else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("request/post/response") {
+        val response = call.receive<PostRequestResponse>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val request: PostRequest? = postRequestCollection.findOneById(ObjectId(response.requestId))
+                if (request != null){
+                    val post: Post? = getPostById(ObjectId(request.post))
+                    val dev : User? = getUserById(ObjectId(request.devId))
+                    if (post != null && dev != null) {
+                        if (post.ownerId == user.username && dev.username !in post.devId) {
+                            if (response.accepted) {
+                                post.devId.add(dev.username)
+                                updatePost(post)
+                            }
+                            postRequestCollection.deleteOneById(ObjectId(response.requestId))
+                        }
+                        else {
+                            call.response.status(HttpStatusCode.Forbidden)
+                        }
+                    }
+                    else {
+                        call.response.status(HttpStatusCode.NotFound)
+                    }
+                }
+                else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            }
+            else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        }
+        else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
 }

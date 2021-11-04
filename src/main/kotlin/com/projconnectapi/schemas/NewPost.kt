@@ -1,11 +1,9 @@
-package com.projconnectapi.models
-
-
+package com.projconnectapi.schemas
 
 data class NewPost(
     val subject: String,
     val ownerId: String,
-    val devId: List<String>,
+    val devId: MutableList<String>,
     val body: String,
     val supporters: List<String>,
     val isArchived: Boolean,
