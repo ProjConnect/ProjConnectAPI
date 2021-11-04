@@ -1,4 +1,4 @@
-package com.projconnectapi.models
+package com.projconnectapi.schemas
 
 data class NewPost(
     val subject: String,

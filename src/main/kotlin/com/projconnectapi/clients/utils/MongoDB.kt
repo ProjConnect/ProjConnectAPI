@@ -1,6 +1,7 @@
 package com.projconnectapi.clients.utils
 
 import com.mongodb.BasicDBObject
+import com.mongodb.client.result.InsertOneResult
 import com.projconnectapi.clients.postCollection
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.userCollection
@@ -27,13 +28,13 @@ fun getUser(filter: Bson): User? {
     return userCollection.findOne(filter)
 }
 
-fun getUserById(id: Bson): User? {
+fun getUserById(id: Any): User? {
     return userCollection.findOneById(id)
 }
 
 // Post functions
-fun createPost(post: Post) {
-    postCollection.insertOne(post)
+fun createPost(post: Post): InsertOneResult {
+    return postCollection.insertOne(post)
 }
 
 fun updatePost(post: Post) {
@@ -46,7 +47,7 @@ fun getPost(filter: Bson): Post? {
     return postCollection.findOne(filter)
 }
 
-fun getPostById(id: Bson): Post? {
+fun getPostById(id: Any): Post? {
     return postCollection.findOneById(id)
 }
 
