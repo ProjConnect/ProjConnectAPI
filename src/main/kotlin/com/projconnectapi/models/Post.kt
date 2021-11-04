@@ -14,5 +14,5 @@ data class Post(
     val isArchived: Boolean,
     val tags: List<String>,
     val course: String,
-    var reported: Boolean,
+    var reported: Boolean = false,
 )
