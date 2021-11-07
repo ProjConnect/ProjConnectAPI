@@ -3,6 +3,7 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.clients.utils.createUser
 import com.projconnectapi.clients.utils.getUser
+import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updateUser
 import com.projconnectapi.models.User
 import com.projconnectapi.models.extensions.toPublicUser
@@ -17,9 +18,12 @@ import io.ktor.response.respondText
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
+import io.ktor.routing.put
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import org.bson.types.ObjectId
 import org.litote.kmongo.eq
+import org.litote.kmongo.id.toId
 
 fun isUserSafe(user: PublicUser, googleAcc: String): Boolean {
     return user.username != "" && user.email == googleAcc
@@ -40,8 +44,43 @@ fun ifSafeThenInsert(user: PublicUser, googleAcc: String): Boolean {
 }
 
 fun Route.userRoute() {
-    get("/search/user/{id}") {
-        call.respondText("Functionality not implemented!", status = HttpStatusCode.OK)
+    get("/search/user/id/{id}") {
+        val id = call.parameters["id"] ?: return@get call.respondText(
+            "Missing or malformed id",
+            status = HttpStatusCode.BadRequest
+        )
+        val user: User? = getUserById(ObjectId(id).toId())
+        if (user != null) {
+            call.respond(user.toPublicUser())
+        } else {
+            call.response.status(HttpStatusCode.NotFound)
+        }
+    }
+
+    get("/search/user/username/{username}") {
+        val username = call.parameters["username"] ?: return@get call.respondText(
+            "Missing or malformed username",
+            status = HttpStatusCode.BadRequest
+        )
+        val user: User? = getUser(User::username eq username)
+        if (user != null) {
+            call.respond(user.toPublicUser())
+        } else {
+            call.response.status(HttpStatusCode.NotFound)
+        }
+    }
+
+    get("/search/user/email/{email}") {
+        val email = call.parameters["email"] ?: return@get call.respondText(
+            "Missing or malformed email",
+            status = HttpStatusCode.BadRequest
+        )
+        val user: User? = getUser(User::email eq email)
+        if (user != null) {
+            call.respond(user.toPublicUser())
+        } else {
+            call.response.status(HttpStatusCode.NotFound)
+        }
     }
 
     get("/my_profile") {
@@ -84,6 +123,29 @@ fun Route.userRoute() {
                 call.response.status(HttpStatusCode.Created)
             } else {
                 call.response.status(HttpStatusCode.BadRequest)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    put("/promote/user") {
+        val userToPromote = call.receive<PublicUser>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val mod: User? = getUser(User::email eq email)
+            if (mod != null && mod.isModerator) {
+                val updatedUser: User? = getUser(User::email eq userToPromote.email)
+                if (updatedUser != null) {
+                    updatedUser.isModerator = true
+                    updateUser(updatedUser)
+                } else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
             }
         } else {
             call.response.status(HttpStatusCode.Unauthorized)
