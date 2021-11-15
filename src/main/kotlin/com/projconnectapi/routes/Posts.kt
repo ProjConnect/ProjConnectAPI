@@ -3,13 +3,14 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
-import com.projconnectapi.clients.utils.createPost
+import com.projconnectapi.clients.utils.updatePost
+import com.projconnectapi.clients.utils.getUser
+import com.projconnectapi.clients.utils.getPost
 import com.projconnectapi.clients.utils.createPostRequest
+import com.projconnectapi.clients.utils.createPost
 import com.projconnectapi.clients.utils.deletePostById
 import com.projconnectapi.clients.utils.getPostById
-import com.projconnectapi.clients.utils.getUser
 import com.projconnectapi.clients.utils.getUserById
-import com.projconnectapi.clients.utils.updatePost
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
@@ -64,10 +65,10 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
-                var posts = mutableListOf<Post>()
+                val posts = mutableListOf<Post>()
                 if (user.history != null) {
                     for (id in user.history) {
-                        var item = getPostById(id)
+                        val item = getPostById(id)
                         if (item != null) {
                             posts.add(item)
                         }
@@ -92,6 +93,19 @@ fun Route.postsRoute() {
             status = HttpStatusCode.BadRequest
         )
         val post = database.getCollection<Post>().findOneById(ObjectId(id))
+        if (post != null) {
+            call.respond(post)
+        } else {
+            call.respondText("No post found", status = HttpStatusCode.NotFound)
+        }
+    }
+
+    get("/search/post/name/{name}") {
+        val name = call.parameters["name"] ?: return@get call.respondText(
+            "Missing or malformed name",
+            status = HttpStatusCode.BadRequest
+        )
+        val post = getPost(Post::subject eq name)
         if (post != null) {
             call.respond(post)
         } else {

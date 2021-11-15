@@ -7,5 +7,6 @@ import org.litote.kmongo.newId
 fun PublicPostRequest.toPostRequest(current: PostRequest?) = PostRequest(
     _id = current?._id ?: newId(),
     post = post,
-    devId = devId
+    devId = devId,
+    description = description
 )
