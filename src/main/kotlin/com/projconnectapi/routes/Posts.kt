@@ -64,22 +64,9 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
-                var posts = mutableListOf<Post>()
-                if (user.history != null) {
-                    for (id in user.history) {
-                        var item = getPostById(id)
-                        if (item != null) {
-                            posts.add(item)
-                        }
-                    }
-                    if (posts.isNotEmpty()) {
-                        call.respond(posts)
-                    } else {
-                        call.respond(HttpStatusCode.NoContent)
-                    }
-                } else {
-                    call.respond(HttpStatusCode.NoContent)
-                }
+                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username)
+                val postsDev = database.getCollection<Post>().find(Post::devId contains user.username)
+                call.respond(postsOwner + postsDev)
             }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
