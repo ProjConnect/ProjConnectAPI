@@ -43,6 +43,16 @@ fun isAuthorizedToDelete(user: User, post: Post): Boolean {
     return user.isModerator || post.ownerId == user._id.toString()
 }
 
+fun mergePostList(ownerPosts: List<Post>, devPosts: List<Post>): List<Post> {
+    var list = devPosts
+    for (post in ownerPosts) {
+        list = list.filter { it._id.toString() != post._id.toString()}
+
+    }
+    return ownerPosts + list
+}
+
+
 fun Route.postsRoute() {
     get("/posts") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
@@ -62,12 +72,12 @@ fun Route.postsRoute() {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
-            val email = auth["email"].toString()
+            val email = "j218548@dac.unicamp.br"
             val user: User? = getUser(User::email eq email)
             if (user != null) {
-                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username)
-                val postsDev = database.getCollection<Post>().find(Post::devId contains user.username)
-                call.respond(postsOwner + postsDev)
+                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
+                val postsDev = database.getCollection<Post>().find(Post::devId contains user.username).toList()
+                call.respond(mergePostList(postsOwner, postsDev))
             }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
