@@ -72,7 +72,7 @@ fun Route.postsRoute() {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
-            val email = "j218548@dac.unicamp.br"
+            val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
                 val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
