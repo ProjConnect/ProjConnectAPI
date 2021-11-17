@@ -3,7 +3,15 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
-import com.projconnectapi.clients.utils.*
+import com.projconnectapi.clients.utils.createPost
+import com.projconnectapi.clients.utils.createPostRequest
+import com.projconnectapi.clients.utils.deletePostById
+import com.projconnectapi.clients.utils.getPost
+import com.projconnectapi.clients.utils.getPostById
+import com.projconnectapi.clients.utils.getPostRequests
+import com.projconnectapi.clients.utils.getUser
+import com.projconnectapi.clients.utils.getUserById
+import com.projconnectapi.clients.utils.updatePost
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
@@ -39,12 +47,10 @@ fun isAuthorizedToDelete(user: User, post: Post): Boolean {
 fun mergePostList(ownerPosts: List<Post>, devPosts: List<Post>): List<Post> {
     var list = devPosts
     for (post in ownerPosts) {
-        list = list.filter { it._id.toString() != post._id.toString()}
-
+        list = list.filter { it._id.toString() != post._id.toString() }
     }
     return ownerPosts + list
 }
-
 
 fun Route.postsRoute() {
     get("/posts") {
@@ -241,7 +247,7 @@ fun Route.postsRoute() {
     }
 
     post("/delete/post") {
-        val post: Post = call.receive<Post>()
+        val post: Post = call.receive()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
