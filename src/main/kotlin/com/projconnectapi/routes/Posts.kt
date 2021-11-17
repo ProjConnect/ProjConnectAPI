@@ -3,14 +3,7 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
-import com.projconnectapi.clients.utils.updatePost
-import com.projconnectapi.clients.utils.getUser
-import com.projconnectapi.clients.utils.getPost
-import com.projconnectapi.clients.utils.createPostRequest
-import com.projconnectapi.clients.utils.createPost
-import com.projconnectapi.clients.utils.deletePostById
-import com.projconnectapi.clients.utils.getPostById
-import com.projconnectapi.clients.utils.getUserById
+import com.projconnectapi.clients.utils.*
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
@@ -165,12 +158,47 @@ fun Route.postsRoute() {
         }
     }
 
+    get("/request/received") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
+                var requests = mutableListOf<PostRequest>()
+                for (post in postsOwner) {
+                    requests += getPostRequests(PostRequest::post eq post._id.toString()).toList()
+                }
+                call.respond(requests)
+            }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    get("/request/sent") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val requests = getPostRequests(PostRequest::devId eq user.username).toList()
+                call.respond(requests)
+            }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
     post("/request/create") {
         val postRequest = call.receive<PublicPostRequest>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
             createPostRequest(postRequest.toPostRequest(null))
+            call.response.status(HttpStatusCode.Created)
         } else {
             call.response.status(HttpStatusCode.Unauthorized)
         }
