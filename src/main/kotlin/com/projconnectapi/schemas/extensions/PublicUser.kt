@@ -18,5 +18,6 @@ fun PublicUser.toUser(current: User?) = User(
     technologies = technologies,
     otherSkills = otherSkills,
     github = github,
-    gitlab = gitlab
+    gitlab = gitlab,
+    avatar = avatar,
 )
