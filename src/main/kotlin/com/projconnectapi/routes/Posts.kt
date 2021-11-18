@@ -280,6 +280,31 @@ fun Route.postsRoute() {
                 if (targetPost != null) {
                     targetPost.reported = true
                     updatePost(targetPost)
+                    call.response.status(HttpStatusCode.OK)
+                } else {
+                    call.response.status(HttpStatusCode.NoContent)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("/unreport/post") {
+        val post: Post = call.receive<Post>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null && user.isModerator) {
+                val targetPost: Post? = getPostById(post._id)
+                if (targetPost != null) {
+                    targetPost.reported = false
+                    updatePost(targetPost)
+                    call.response.status(HttpStatusCode.OK)
                 } else {
                     call.response.status(HttpStatusCode.NoContent)
                 }
