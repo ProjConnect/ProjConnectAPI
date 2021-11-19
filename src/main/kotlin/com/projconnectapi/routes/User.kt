@@ -7,6 +7,7 @@ import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updateUser
 import com.projconnectapi.models.User
 import com.projconnectapi.models.extensions.toPublicUser
+import com.projconnectapi.schemas.EmailPayload
 import com.projconnectapi.schemas.PublicUser
 import com.projconnectapi.schemas.UserSession
 import com.projconnectapi.schemas.extensions.toUser
@@ -18,7 +19,6 @@ import io.ktor.response.respondText
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
-import io.ktor.routing.put
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import org.bson.types.ObjectId
@@ -104,8 +104,23 @@ fun Route.userRoute() {
                         null,
                         null,
                         null,
+                        null,
                     )
                 )
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    get("/access") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val userProfile = getUser(User::email eq email)
+            if (userProfile != null && userProfile.isModerator) {
+                call.response.status(HttpStatusCode.OK)
             }
         } else {
             call.response.status(HttpStatusCode.Unauthorized)
@@ -129,8 +144,8 @@ fun Route.userRoute() {
         }
     }
 
-    put("/promote/user") {
-        val userToPromote = call.receive<PublicUser>()
+    post("/promote/user") {
+        val userToPromote = call.receive<EmailPayload>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
@@ -141,6 +156,7 @@ fun Route.userRoute() {
                 if (updatedUser != null) {
                     updatedUser.isModerator = true
                     updateUser(updatedUser)
+                    call.response.status(HttpStatusCode.OK)
                 } else {
                     call.response.status(HttpStatusCode.NotFound)
                 }

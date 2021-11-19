@@ -1,6 +1,7 @@
 package com.projconnectapi.clients.utils
 
 import com.mongodb.BasicDBObject
+import com.mongodb.client.FindIterable
 import com.mongodb.client.result.InsertOneResult
 import com.projconnectapi.clients.postCollection
 import com.projconnectapi.clients.postRequestCollection
@@ -60,4 +61,8 @@ fun getPostById(id: Id<Post>): Post? {
 // Post request functions
 fun createPostRequest(request: PostRequest) {
     postRequestCollection.insertOne(request)
+}
+
+fun getPostRequests(filter: Bson): FindIterable<PostRequest> {
+    return postRequestCollection.find(filter)
 }

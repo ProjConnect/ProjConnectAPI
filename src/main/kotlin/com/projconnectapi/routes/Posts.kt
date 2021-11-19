@@ -6,7 +6,9 @@ import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.clients.utils.createPost
 import com.projconnectapi.clients.utils.createPostRequest
 import com.projconnectapi.clients.utils.deletePostById
+import com.projconnectapi.clients.utils.getPost
 import com.projconnectapi.clients.utils.getPostById
+import com.projconnectapi.clients.utils.getPostRequests
 import com.projconnectapi.clients.utils.getUser
 import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updatePost
@@ -42,6 +44,14 @@ fun isAuthorizedToDelete(user: User, post: Post): Boolean {
     return user.isModerator || post.ownerId == user._id.toString()
 }
 
+fun mergePostList(ownerPosts: List<Post>, devPosts: List<Post>): List<Post> {
+    var list = devPosts
+    for (post in ownerPosts) {
+        list = list.filter { it._id.toString() != post._id.toString() }
+    }
+    return ownerPosts + list
+}
+
 fun Route.postsRoute() {
     get("/posts") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
@@ -64,22 +74,9 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
-                var posts = mutableListOf<Post>()
-                if (user.history != null) {
-                    for (id in user.history) {
-                        var item = getPostById(id)
-                        if (item != null) {
-                            posts.add(item)
-                        }
-                    }
-                    if (posts.isNotEmpty()) {
-                        call.respond(posts)
-                    } else {
-                        call.respond(HttpStatusCode.NoContent)
-                    }
-                } else {
-                    call.respond(HttpStatusCode.NoContent)
-                }
+                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
+                val postsDev = database.getCollection<Post>().find(Post::devId contains user.username).toList()
+                call.respond(mergePostList(postsOwner, postsDev))
             }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
@@ -92,6 +89,19 @@ fun Route.postsRoute() {
             status = HttpStatusCode.BadRequest
         )
         val post = database.getCollection<Post>().findOneById(ObjectId(id))
+        if (post != null) {
+            call.respond(post)
+        } else {
+            call.respondText("No post found", status = HttpStatusCode.NotFound)
+        }
+    }
+
+    get("/search/post/name/{name}") {
+        val name = call.parameters["name"] ?: return@get call.respondText(
+            "Missing or malformed name",
+            status = HttpStatusCode.BadRequest
+        )
+        val post = getPost(Post::subject eq name)
         if (post != null) {
             call.respond(post)
         } else {
@@ -154,12 +164,47 @@ fun Route.postsRoute() {
         }
     }
 
+    get("/request/received") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
+                var requests = mutableListOf<PostRequest>()
+                for (post in postsOwner) {
+                    requests += getPostRequests(PostRequest::post eq post._id.toString()).toList()
+                }
+                call.respond(requests)
+            }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    get("/request/sent") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null) {
+                val requests = getPostRequests(PostRequest::devId eq user.username).toList()
+                call.respond(requests)
+            }
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
     post("/request/create") {
         val postRequest = call.receive<PublicPostRequest>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
             createPostRequest(postRequest.toPostRequest(null))
+            call.response.status(HttpStatusCode.Created)
         } else {
             call.response.status(HttpStatusCode.Unauthorized)
         }
@@ -202,7 +247,7 @@ fun Route.postsRoute() {
     }
 
     post("/delete/post") {
-        val post: Post = call.receive<Post>()
+        val post: Post = call.receive()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
@@ -235,6 +280,31 @@ fun Route.postsRoute() {
                 if (targetPost != null) {
                     targetPost.reported = true
                     updatePost(targetPost)
+                    call.response.status(HttpStatusCode.OK)
+                } else {
+                    call.response.status(HttpStatusCode.NoContent)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("/unreport/post") {
+        val post: Post = call.receive<Post>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val user: User? = getUser(User::email eq email)
+            if (user != null && user.isModerator) {
+                val targetPost: Post? = getPostById(post._id)
+                if (targetPost != null) {
+                    targetPost.reported = false
+                    updatePost(targetPost)
+                    call.response.status(HttpStatusCode.OK)
                 } else {
                     call.response.status(HttpStatusCode.NoContent)
                 }

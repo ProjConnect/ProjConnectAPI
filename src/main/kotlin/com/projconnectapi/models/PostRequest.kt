@@ -6,5 +6,6 @@ import org.litote.kmongo.Id
 data class PostRequest (
     @BsonId val _id: Id<PostRequest>,
     val post: String,
-    val devId: String
+    val devId: String,
+    val description: String
 )

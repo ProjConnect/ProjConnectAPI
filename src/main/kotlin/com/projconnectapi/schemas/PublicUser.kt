@@ -10,5 +10,6 @@ data class PublicUser(
     val technologies: List<String>?,
     val otherSkills: List<String>?,
     val github: String?,
-    val gitlab: String?
+    val gitlab: String?,
+    val avatar: Int?
 )
