@@ -66,7 +66,7 @@ Além disso e de outras informações pessoais como o link para o Github e Gitla
 indicar se uma pessoa é moderadora e campos para adicionar descrição pessoal e lista de competências
 e habilidades como linguagens de programação, tecnologicas (como frameworks) e outras skills.
 
-###### *Post*
+##### *Post*
 
 Os atributos de um projeto, *Post*, estão listados na figura abaixo
 
@@ -103,32 +103,32 @@ caso contrário, redirecionamos o usuário para a página de cadastro também de
 
 #### Endpoints Implementados
 
-| Entidade       | Tipo | Endpoint                           | Função                                                                                                                    |                           |
-|----------------|------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| User           | get  | `/search/user/id/{id}`             | Procura usuário através do *id*                                                                                           |                           |
-| User           | get  | `/search/user/username/{username}` | Procura usuário através do *username*                                                                                     |                           |
-| User           | get  | `/search/user/email/{email}`       | Procura usuário através do e-mail usado para o login                                                                      |                           |
-| User           | get  | `/my_profile`                      | Pega informações do próprio usuário logado                                                                                |                           |
-| User           | get  | `/access`                          | Verifica se usuário tem privilégio de moderador e dá um OK se sim, caso contrário um unauthorized                         |                           |
-| User           | post | `/profile/update`                  | Atualiza os dados do usuário, pode dar erro se tiver campo inválido ou modificar um campo não autorizado                  |                           |
-| User           | post | `/promote/user`                    | Moderador promove um usuário para moderador                                                                               |                           |
-| Post           | get  | `/posts`                           | Obter todos os posts dentro da plataforma                                                                                 |                           |
-| Post           | get  | `/posts/mine`                      | Obter todos os posts em que o usuário participou (dono ou desenvolvedor)                                                  |                           |
-| Post           | get  | `/search/post/id/{id}`             | Procurar post através do *id*                                                                                             |                           |
-| Post           | get  | `/search/post/name/{name}`         | Procurar todos os posts que têm o título igual a *name*                                                                   |                           |
-| Post           | get  | `/search/post/tags/{tag}`          | Procurar todos os posts que contém a *tag*                                                                                |                           |
-| Post           | post | `/new-post`                        | Criar novo post                                                                                                           |                           |
-| Post           | post | `/delete/post`                     | Deletar post, somente dono ou moderador pode fazer isso                                                                   |                           |
-| Post           | post | `/report/post`                     | Denunciar post por conteúdo impróprio                                                                                     |                           |
-| Post           | post | `/unreport/post`                   | Remover denúncia do post, funcionalidade exclusiva do moderador                                                           |                           |
-| RequestPost    | get  | `/search/request/postid/{id}`      | Procura por pedidos de participação para o post cujo id é *id*                                                            |                           |
-| RequestPost    | get  | `/request/received`                | Usuário procura por pedidos de participação para algum de seus posts em que ele é dono                                    |                           |
-| RequestPost    | get  | `/request/sent`                    | Usuário verifica todos os seus pedidos que ainda não foram respondidos                                                    |                           |
-| RequestPost    | post | `/request/create`                  | Usuário realiza um pedido de participação para o post escolhido                                                           |                           |
-| RequestPost    | post | `/request/response`                | Dono do post responde pedido aceitando ou recusando usuário                                                               |                           |
-| Authentication | get  | `/login`                           | Usuário é redirecionado para a página de login do Google                                                                  |                           |
-| Authentication | get  | `/callback`                        | Usuário é redirecionado para a página de listas de projetos se já tem conta na plataforma ou para cadastro caso contrário |                           |
-| Authentication | get  | `/logout`                          | Usuário é redirecionado para a página de login do Google                                                                  | Realiza logout do usuário |
+| Entidade       | Tipo | Endpoint                           | Função                                                                                                                    |
+|----------------|------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| User           | get  | `/search/user/id/{id}`             | Procura usuário através do *id*                                                                                           |
+| User           | get  | `/search/user/username/{username}` | Procura usuário através do *username*                                                                                     |
+| User           | get  | `/search/user/email/{email}`       | Procura usuário através do e-mail usado para o login                                                                      |
+| User           | get  | `/my_profile`                      | Pega informações do próprio usuário logado                                                                                |
+| User           | get  | `/access`                          | Verifica se usuário tem privilégio de moderador e dá um OK se sim, caso contrário um unauthorized                         |
+| User           | post | `/profile/update`                  | Atualiza os dados do usuário, pode dar erro se tiver campo inválido ou modificar um campo não autorizado                  |
+| User           | post | `/promote/user`                    | Moderador promove um usuário para moderador                                                                               |
+| Post           | get  | `/posts`                           | Obter todos os posts dentro da plataforma                                                                                 |
+| Post           | get  | `/posts/mine`                      | Obter todos os posts em que o usuário participou (dono ou desenvolvedor)                                                  |
+| Post           | get  | `/search/post/id/{id}`             | Procurar post através do *id*                                                                                             |
+| Post           | get  | `/search/post/name/{name}`         | Procurar todos os posts que têm o título igual a *name*                                                                   |
+| Post           | get  | `/search/post/tags/{tag}`          | Procurar todos os posts que contém a *tag*                                                                                |
+| Post           | post | `/new-post`                        | Criar novo post                                                                                                           |
+| Post           | post | `/delete/post`                     | Deletar post, somente dono ou moderador pode fazer isso                                                                   |
+| Post           | post | `/report/post`                     | Denunciar post por conteúdo impróprio                                                                                     |
+| Post           | post | `/unreport/post`                   | Remover denúncia do post, funcionalidade exclusiva do moderador                                                           |
+| RequestPost    | get  | `/search/request/postid/{id}`      | Procura por pedidos de participação para o post cujo id é *id*                                                            |
+| RequestPost    | get  | `/request/received`                | Usuário procura por pedidos de participação para algum de seus posts em que ele é dono                                    |
+| RequestPost    | get  | `/request/sent`                    | Usuário verifica todos os seus pedidos que ainda não foram respondidos                                                    |
+| RequestPost    | post | `/request/create`                  | Usuário realiza um pedido de participação para o post escolhido                                                           |
+| RequestPost    | post | `/request/response`                | Dono do post responde pedido aceitando ou recusando usuário                                                               |
+| Authentication | get  | `/login`                           | Usuário é redirecionado para a página de login do Google                                                                  |
+| Authentication | get  | `/callback`                        | Usuário é redirecionado para a página de listas de projetos se já tem conta na plataforma ou para cadastro caso contrário |
+| Authentication | get  | `/logout`                          | Realiza logout do usuário                                                                                                 |
 
 
 #### Ambiente
