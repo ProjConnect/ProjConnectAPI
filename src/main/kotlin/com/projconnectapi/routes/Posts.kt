@@ -136,6 +136,22 @@ fun Route.postsRoute() {
         }
     }
 
+    get("/search/post/user/{username}") {
+        val username = call.parameters["username"] ?: return@get call.respondText(
+            "Missing or malformed username",
+            status = HttpStatusCode.BadRequest
+        )
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val postsOwner = database.getCollection<Post>().find(Post::ownerId eq username).toList()
+            val postsDev = database.getCollection<Post>().find(Post::devId contains username).toList()
+            call.respond(mergePostList(postsOwner, postsDev))
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
     post("/new-post") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
@@ -199,10 +215,10 @@ fun Route.postsRoute() {
     }
 
     post("/request/create") {
-        val postRequest = call.receive<PublicPostRequest>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
+            val postRequest = call.receive<PublicPostRequest>()
             createPostRequest(postRequest.toPostRequest(null))
             call.response.status(HttpStatusCode.Created)
         } else {
@@ -211,10 +227,10 @@ fun Route.postsRoute() {
     }
 
     post("/request/response") {
-        val response = call.receive<PostRequestResponse>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
+            val response = call.receive<PostRequestResponse>()
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
