@@ -173,11 +173,7 @@ fun Route.postsRoute() {
             status = HttpStatusCode.BadRequest
         )
         val requests: List<PostRequest> = postRequestCollection.find(PostRequest::post eq postId).toList()
-        if (requests.isNotEmpty()) {
-            call.respond(requests)
-        } else {
-            call.respondText("No requests found", status = HttpStatusCode.NotFound)
-        }
+        call.respond(requests)
     }
 
     get("/request/received") {
