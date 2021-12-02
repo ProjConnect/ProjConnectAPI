@@ -177,8 +177,6 @@ Esse repositório contém um fabfile que é utilizado nos workflows de deploy. A
 - build da imagem Docker
 - execução/atualização de um container utilizando Docker Compose
 
-#### Como colocar no ar, como testar, etc
-
 #### Como acessar, quem pode se cadastrar(regras de acessos), etc.
 
 Qualquer pessoa com um email do domínio da UNICAMP (_@unicamp.br, _@dac.unidamp.br) consegue realizar o login utilzando o login integrado com Google.
