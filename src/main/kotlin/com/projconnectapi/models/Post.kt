@@ -8,6 +8,7 @@ data class Post(
     val subject: String,
     val ownerId: String,
     val devId: MutableList<String>,
+    val deadline: String?,
     val body: String,
     val supporters: List<String>,
     val finalProductScore: Review,
@@ -15,4 +16,5 @@ data class Post(
     val tags: List<String>,
     val course: String,
     var reported: Boolean = false,
+    var image: Int = 0
 )
