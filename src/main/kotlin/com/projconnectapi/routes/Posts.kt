@@ -3,6 +3,7 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
+import com.projconnectapi.clients.utils.createOrUpdateInfractor
 import com.projconnectapi.clients.utils.createPost
 import com.projconnectapi.clients.utils.createPostRequest
 import com.projconnectapi.clients.utils.deletePostById
@@ -266,6 +267,7 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null && isAuthorizedToDelete(user, post)) {
+                createOrUpdateInfractor(post)
                 val deleted = deletePostById(post._id)
                 if (deleted) {
                     call.response.status(HttpStatusCode.OK)
