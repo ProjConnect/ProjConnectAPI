@@ -35,6 +35,10 @@ fun Route.oauthRoute() {
                 val email = auth["email"].toString()
                 val userProfile: User? = getUser(User::email eq email)
                 if (userProfile != null) {
+                    if (userProfile.banned) {
+                        call.sessions.clear("user_session")
+                        call.respondRedirect("${System.getenv("CLIENT_URL") ?: null}")
+                    }
                     call.respondRedirect("${System.getenv("CLIENT_URL") ?: ""}/project/list")
                 } else {
                     call.respondRedirect("${System.getenv("CLIENT_URL") ?: ""}/profile/edit")
