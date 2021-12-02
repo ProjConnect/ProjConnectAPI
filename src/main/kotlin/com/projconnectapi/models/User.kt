@@ -9,6 +9,7 @@ data class User(
     val username: String,
     val email: String,
     var isModerator: Boolean,
+    var banned: Boolean,
     val firstName: String?,
     val lastName: String?,
     val aboutMe: String?,

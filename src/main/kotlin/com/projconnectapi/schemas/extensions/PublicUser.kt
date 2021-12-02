@@ -9,6 +9,7 @@ fun PublicUser.toUser(current: User?) = User(
     username = username,
     email = email,
     isModerator = current?.isModerator ?: false,
+    banned = current?.banned ?: false,
     firstName = firstName,
     lastName = lastName,
     aboutMe = aboutMe,
