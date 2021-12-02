@@ -1,10 +1,13 @@
 package com.projconnectapi.routes
 
+import com.projconnectapi.clients.infractorCollection
 import com.projconnectapi.clients.safeTokenVerification
 import com.projconnectapi.clients.utils.createUser
 import com.projconnectapi.clients.utils.getUser
 import com.projconnectapi.clients.utils.getUserById
+import com.projconnectapi.clients.utils.updateInfractor
 import com.projconnectapi.clients.utils.updateUser
+import com.projconnectapi.models.Infractor
 import com.projconnectapi.models.User
 import com.projconnectapi.models.extensions.toPublicUser
 import com.projconnectapi.schemas.EmailPayload
@@ -159,6 +162,79 @@ fun Route.userRoute() {
                     call.response.status(HttpStatusCode.OK)
                 } else {
                     call.response.status(HttpStatusCode.NotFound)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("/ban/user") {
+        val userToBan = call.receive<Infractor>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val mod: User? = getUser(User::email eq email)
+            if (mod != null && mod.isModerator) {
+                val updatedUser: User? = getUser(User::username eq userToBan.user)
+                if (updatedUser != null && !updatedUser.isModerator) {
+                    updatedUser.banned = true
+                    updateUser(updatedUser)
+                    userToBan.banStatus = true
+                    updateInfractor(userToBan)
+                    call.response.status(HttpStatusCode.OK)
+                } else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    post("/unban/user") {
+        val userToUnban = call.receive<Infractor>()
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val mod: User? = getUser(User::email eq email)
+            if (mod != null && mod.isModerator) {
+                val updatedUser: User? = getUser(User::username eq userToUnban.user)
+                if (updatedUser != null && !updatedUser.isModerator) {
+                    updatedUser.banned = false
+                    updateUser(updatedUser)
+                    userToUnban.banStatus = false
+                    updateInfractor(userToUnban)
+                    call.response.status(HttpStatusCode.OK)
+                } else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            } else {
+                call.response.status(HttpStatusCode.Unauthorized)
+            }
+        } else {
+            call.response.status(HttpStatusCode.Unauthorized)
+        }
+    }
+
+    get("/search/user/infractor") {
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val email = auth["email"].toString()
+            val mod: User? = getUser(User::email eq email)
+            if (mod != null && mod.isModerator) {
+                val infractors = infractorCollection.find().toList()
+                if (infractors.isNotEmpty()) {
+                    call.respond(infractors)
+                } else {
+                    call.respondText("No infractors found", status = HttpStatusCode.NoContent)
                 }
             } else {
                 call.response.status(HttpStatusCode.Unauthorized)

@@ -1,5 +1,6 @@
 package com.projconnectapi.clients
 
+import com.projconnectapi.models.Infractor
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
@@ -12,3 +13,4 @@ val database = mongoClient.getDatabase(System.getenv("DB_NAME") ?: "")
 val userCollection = database.getCollection<User>()
 val postCollection = database.getCollection<Post>()
 val postRequestCollection = database.getCollection<PostRequest>()
+val infractorCollection = database.getCollection<Infractor>()
