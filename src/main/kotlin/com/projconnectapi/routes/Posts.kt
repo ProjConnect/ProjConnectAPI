@@ -10,7 +10,6 @@ import com.projconnectapi.clients.utils.getPost
 import com.projconnectapi.clients.utils.getPostById
 import com.projconnectapi.clients.utils.getPostRequests
 import com.projconnectapi.clients.utils.getUser
-import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updatePost
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
@@ -238,7 +237,7 @@ fun Route.postsRoute() {
                 val request: PostRequest? = postRequestCollection.findOneById(ObjectId(response.requestId))
                 if (request != null) {
                     val post: Post? = getPostById(ObjectId(request.post).toId<Post>())
-                    val dev: User? = getUserById(ObjectId(request.devId).toId<User>())
+                    val dev: User? = getUser(User::username eq request.devId)
                     if (post != null && dev != null) {
                         if (post.ownerId == user.username && dev.username !in post.devId) {
                             if (response.accepted) {
@@ -246,6 +245,7 @@ fun Route.postsRoute() {
                                 updatePost(post)
                             }
                             postRequestCollection.deleteOneById(ObjectId(response.requestId))
+                            call.response.status(HttpStatusCode.OK)
                         } else {
                             call.response.status(HttpStatusCode.Forbidden)
                         }
