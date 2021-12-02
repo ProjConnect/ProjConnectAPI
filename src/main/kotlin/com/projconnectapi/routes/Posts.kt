@@ -14,7 +14,9 @@ import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updatePost
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
+import com.projconnectapi.models.PostWithRequests
 import com.projconnectapi.models.User
+import com.projconnectapi.models.extensions.addRequests
 import com.projconnectapi.schemas.NewPost
 import com.projconnectapi.schemas.PostRequestResponse
 import com.projconnectapi.schemas.PublicPostRequest
@@ -183,12 +185,15 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
+                var postRequests = mutableListOf<PostWithRequests>()
                 val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
-                var requests = mutableListOf<PostRequest>()
                 for (post in postsOwner) {
-                    requests += getPostRequests(PostRequest::post eq post._id.toString()).toList()
+                    val requests = getPostRequests(PostRequest::post eq post._id.toString()).toMutableList()
+                    if (requests.isNotEmpty()) {
+                        postRequests += post.addRequests(requests)
+                    }
                 }
-                call.respond(requests)
+                call.respond(postRequests)
             }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
