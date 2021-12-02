@@ -3,9 +3,11 @@ package com.projconnectapi.clients.utils
 import com.mongodb.BasicDBObject
 import com.mongodb.client.FindIterable
 import com.mongodb.client.result.InsertOneResult
+import com.projconnectapi.clients.infractorCollection
 import com.projconnectapi.clients.postCollection
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.userCollection
+import com.projconnectapi.models.Infractor
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
 import com.projconnectapi.models.User
@@ -65,4 +67,32 @@ fun createPostRequest(request: PostRequest) {
 
 fun getPostRequests(filter: Bson): FindIterable<PostRequest> {
     return postRequestCollection.find(filter)
+}
+
+// Infractor functions
+fun createInfractor(username: String, infraction: String): InsertOneResult {
+    val infractions = MutableList(1) { infraction }
+    return infractorCollection.insertOne(
+        Infractor(
+            user = username,
+            banStatus = false,
+            infractions = infractions
+        )
+    )
+}
+
+fun updateInfractor(infractor: Infractor) {
+    val updateObject = BasicDBObject()
+    updateObject["\$set"] = infractor
+    infractorCollection.updateOne(Infractor::_id eq infractor._id, updateObject)
+}
+
+fun createOrUpdateInfractor(post: Post) {
+    val infractor = infractorCollection.findOne((Infractor::user eq post.ownerId))
+    if (infractor != null) {
+        infractor.infractions.add(post.toString())
+        updateInfractor(infractor)
+    } else {
+        createInfractor(post.ownerId, post.toString())
+    }
 }

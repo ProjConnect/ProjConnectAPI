@@ -3,6 +3,7 @@ package com.projconnectapi.routes
 import com.projconnectapi.clients.database
 import com.projconnectapi.clients.postRequestCollection
 import com.projconnectapi.clients.safeTokenVerification
+import com.projconnectapi.clients.utils.createOrUpdateInfractor
 import com.projconnectapi.clients.utils.createPost
 import com.projconnectapi.clients.utils.createPostRequest
 import com.projconnectapi.clients.utils.deletePostById
@@ -10,11 +11,12 @@ import com.projconnectapi.clients.utils.getPost
 import com.projconnectapi.clients.utils.getPostById
 import com.projconnectapi.clients.utils.getPostRequests
 import com.projconnectapi.clients.utils.getUser
-import com.projconnectapi.clients.utils.getUserById
 import com.projconnectapi.clients.utils.updatePost
 import com.projconnectapi.models.Post
 import com.projconnectapi.models.PostRequest
+import com.projconnectapi.models.PostWithRequests
 import com.projconnectapi.models.User
+import com.projconnectapi.models.extensions.addRequests
 import com.projconnectapi.schemas.NewPost
 import com.projconnectapi.schemas.PostRequestResponse
 import com.projconnectapi.schemas.PublicPostRequest
@@ -136,6 +138,22 @@ fun Route.postsRoute() {
         }
     }
 
+    get("/search/post/user/{username}") {
+        val username = call.parameters["username"] ?: return@get call.respondText(
+            "Missing or malformed username",
+            status = HttpStatusCode.BadRequest
+        )
+        val userSession: UserSession? = call.sessions.get<UserSession>()
+        val auth = safeTokenVerification(userSession)
+        if (auth != null) {
+            val postsOwner = database.getCollection<Post>().find(Post::ownerId eq username).toList()
+            val postsDev = database.getCollection<Post>().find(Post::devId contains username).toList()
+            call.respond(mergePostList(postsOwner, postsDev))
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+
     post("/new-post") {
         val userSession: UserSession? = call.sessions.get<UserSession>()
         if (userSession != null) {
@@ -157,11 +175,7 @@ fun Route.postsRoute() {
             status = HttpStatusCode.BadRequest
         )
         val requests: List<PostRequest> = postRequestCollection.find(PostRequest::post eq postId).toList()
-        if (requests.isNotEmpty()) {
-            call.respond(requests)
-        } else {
-            call.respondText("No requests found", status = HttpStatusCode.NotFound)
-        }
+        call.respond(requests)
     }
 
     get("/request/received") {
@@ -171,12 +185,15 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
+                var postRequests = mutableListOf<PostWithRequests>()
                 val postsOwner = database.getCollection<Post>().find(Post::ownerId eq user.username).toList()
-                var requests = mutableListOf<PostRequest>()
                 for (post in postsOwner) {
-                    requests += getPostRequests(PostRequest::post eq post._id.toString()).toList()
+                    val requests = getPostRequests(PostRequest::post eq post._id.toString()).toMutableList()
+                    if (requests.isNotEmpty()) {
+                        postRequests += post.addRequests(requests)
+                    }
                 }
-                call.respond(requests)
+                call.respond(postRequests)
             }
         } else {
             call.respond(HttpStatusCode.Unauthorized)
@@ -199,10 +216,10 @@ fun Route.postsRoute() {
     }
 
     post("/request/create") {
-        val postRequest = call.receive<PublicPostRequest>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
+            val postRequest = call.receive<PublicPostRequest>()
             createPostRequest(postRequest.toPostRequest(null))
             call.response.status(HttpStatusCode.Created)
         } else {
@@ -211,17 +228,17 @@ fun Route.postsRoute() {
     }
 
     post("/request/response") {
-        val response = call.receive<PostRequestResponse>()
         val userSession: UserSession? = call.sessions.get<UserSession>()
         val auth = safeTokenVerification(userSession)
         if (auth != null) {
+            val response = call.receive<PostRequestResponse>()
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null) {
                 val request: PostRequest? = postRequestCollection.findOneById(ObjectId(response.requestId))
                 if (request != null) {
                     val post: Post? = getPostById(ObjectId(request.post).toId<Post>())
-                    val dev: User? = getUserById(ObjectId(request.devId).toId<User>())
+                    val dev: User? = getUser(User::username eq request.devId)
                     if (post != null && dev != null) {
                         if (post.ownerId == user.username && dev.username !in post.devId) {
                             if (response.accepted) {
@@ -229,6 +246,7 @@ fun Route.postsRoute() {
                                 updatePost(post)
                             }
                             postRequestCollection.deleteOneById(ObjectId(response.requestId))
+                            call.response.status(HttpStatusCode.OK)
                         } else {
                             call.response.status(HttpStatusCode.Forbidden)
                         }
@@ -254,6 +272,7 @@ fun Route.postsRoute() {
             val email = auth["email"].toString()
             val user: User? = getUser(User::email eq email)
             if (user != null && isAuthorizedToDelete(user, post)) {
+                createOrUpdateInfractor(post)
                 val deleted = deletePostById(post._id)
                 if (deleted) {
                     call.response.status(HttpStatusCode.OK)
